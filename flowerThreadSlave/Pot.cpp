@@ -9,24 +9,6 @@ Pot::Pot(int muxPin, int analogPin, int index, InputType inputType, Arduino_h::b
   this->index = index;
   this->globalVal = valueArray;
   this->inputType = inputType;
-
-#ifdef DEBUG_POT
-  Serial.print("analogPin: ");
-  Serial.print(analogPin);
-  Serial.print('\t');
-
-  Serial.print("muxPin: ");
-  Serial.print(muxPin);
-  Serial.print('\t');
-
-  Serial.print("index: ");
-  Serial.print(index);
-  Serial.print('\t');
-
-  Serial.print("inputType: ");
-  Serial.print(inputType);
-  Serial.println('\t');
-#endif
 }
 
 Pot::Pot(int analogPin, int index, InputType inputType, Arduino_h::byte* valueArray){
@@ -88,5 +70,10 @@ void Pot::checkNewValue(int newValue){
 }
 
 int Pot::getValue(){
+  newRead = false;
   return potVal;
+}
+
+bool Pot::available(){
+  return newRead;
 }

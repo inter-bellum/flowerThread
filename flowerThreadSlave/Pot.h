@@ -3,9 +3,6 @@
 
 #include <Arduino.h>
 #include "InputType.cpp"
-#include <Adafruit_NeoPixel.h>
-
-#define DEBUG_POT
 
 class Pot {
   //I2C uses A4 and A5, skip those
@@ -36,6 +33,8 @@ class Pot {
 
     int getValue();
 
+    boolean available();
+
   private:
     void loadIntoByteArr(int in){
       localVal[0] = (in >> 8) & 0xFF;
@@ -44,7 +43,6 @@ class Pot {
     }
 
     void debugPrint(){
-      #ifdef DEBUG_POT
       Serial.print("index:");
       Serial.print(index);
       Serial.print('\t');
@@ -60,7 +58,6 @@ class Pot {
       Serial.print("val:");
       Serial.println(potVal);
       Serial.println();
-      #endif
     }
 
     void debugPlot(){

@@ -2,18 +2,12 @@
 #include <Wire.h>
 #include "Module.h"
 
-enum ColorIndex{
-  RED,
-  GREEN,
-  BLUE
-};
+#include <Adafruit_NeoPixel.h>
+
+Adafruit_NeoPixel strip;
+Adafruit_NeoPixel stri2p;
 
 int analogPotPins[3] = {2, 3, 6};
-
-int colorXMin[3] = {59, 68, 127};
-int colorXMax[3] = {139, 117, 121};
-int colorYMin[3] = {59, 68, 127};
-int colorYMax[3] = {43, 94, 74};
 
 #define NUM_PIN_POTS  3
 #define NUM_MUX_POTS  6
@@ -21,6 +15,8 @@ int colorYMax[3] = {43, 94, 74};
 #define NUM_MODULES   3
 #define MUX_PIN_1     0
 #define MUX_PIN_2     1
+
+#define NUM_LEDS      10
 
 Pot pots[NUM_POTS];
 Module modules[NUM_MODULES];
@@ -30,6 +26,8 @@ byte potValues[NUM_POTS * 2];
 void setup() {  
   pinMode(2, OUTPUT);
   pinMode(3, OUTPUT);
+
+  strip = Adafruit_NeoPixel(NUM_LEDS, 5, NEO_GRB + NEO_KHZ800);
   
 #ifndef DEBUG_SIG
   //change for each arduino
@@ -57,16 +55,15 @@ void setup() {
 
   Pot* mod3[3] = {&pots[6], &pots[7], &pots[8]};
 
-//  modules[0] = Module(0, mod1);
+  modules[0] = Module(0, mod1, &strip);
+  modules[1] = Module(1, mod2, &stri2p);
+  modules[2] = Module(2, mod3, &stri2p);
 }
 
 void loop() {
-
-  for (int i = 0; i < 3; i++){
-    pots[i].read();
-    pots[i+3].readNoPortSelect();
-  }
-  Serial.println();
+  modules[0].read(modules[1]);
+  modules[2].read();
+  modules[0].updateColor();
 
 #ifdef DEBUG_SIG
   int val1 = analogRead(A4);
@@ -82,20 +79,4 @@ void loop() {
 
 void requestHandler(){
   Wire.write(potValues, NUM_POTS * 2);
-}
-
-uint32_t interpolateColorSpace(int xIn, int yIn){
-  float x = xIn / 1023.;
-  float y = yIn / 1023.;
-  
-  
-  byte r = interpolateColor(RED, x, y);
-  byte g = interpolateColor(GREEN, x, y);
-  byte b = interpolateColor(BLUE, x, y);
-
-  return (uint32_t) (g << 16) | (r << 8) | b;
-}
-
-byte interpolateColor(ColorIndex c, float x, float y){
-  return byte(((colorXMax[c] * x) + (colorXMin[c] * (1 - x)) + (colorYMax[c] * y) + (colorYMin[c] * (1 - y))) / 4.);
 }
