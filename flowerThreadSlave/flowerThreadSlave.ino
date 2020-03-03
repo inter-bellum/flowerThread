@@ -1,6 +1,19 @@
 //This sketch is used to communicate the data from multiple potmeters to a teensy using I2C
 #include <Wire.h>
-#include "Pot.cpp"
+#include "Module.h"
+
+enum ColorIndex{
+  RED,
+  GREEN,
+  BLUE
+};
+
+int analogPotPins[3] = {2, 3, 6};
+
+int colorXMin[3] = {59, 68, 127};
+int colorXMax[3] = {139, 117, 121};
+int colorYMin[3] = {59, 68, 127};
+int colorYMax[3] = {43, 94, 74};
 
 #define NUM_PIN_POTS  3
 #define NUM_MUX_POTS  6
@@ -8,89 +21,40 @@
 #define MUX_PIN_1     0
 #define MUX_PIN_2     1
 
-//#define DEBUG_SIG
-
 Pot pots[NUM_POTS];
-
-Pot* simReadablePots[3][2];
-Pot* analogPots[3];
 
 byte potValues[NUM_POTS * 2];
 
-void setup() {
-  //change for each arduino
+void setup() {  
+  pinMode(2, OUTPUT);
+  pinMode(3, OUTPUT);
   
 #ifndef DEBUG_SIG
+  //change for each arduino
   Wire.begin(0x00);
   Wire.onRequest(requestHandler);
 #endif
 
-  pinMode(2, OUTPUT);
-  pinMode(3, OUTPUT);
-
   Serial.begin(9600);
-  //set up the pots
-//  for (int i = 0; i < NUM_POTS; i++){
-//    int pinNumber = i % 3;
-    //pots are distributed as:
-    //ch 0, pins 0, 1, 2
-    //ch 1, pins 0, 1, 2
-    //pins/channels can thus be calculated:
 
-    pots[0] = Pot(0, 0, 0, IT_MUX, potValues);
-    simReadablePots[0][0] = &pots[0];
-    pots[1] = Pot(1, 0, 1, IT_MUX, potValues);
-    simReadablePots[1][0] = &pots[1];
-    pots[2] = Pot(2, 0, 2, IT_MUX, potValues);
-    simReadablePots[2][0] = &pots[2];
-    pots[3] = Pot(0, 1, 3, IT_MUX, potValues);
-    simReadablePots[0][1] = &pots[3];
-    pots[4] = Pot(1, 1, 4, IT_MUX, potValues);
-    simReadablePots[1][1] = &pots[4];
-    pots[5] = Pot(2, 1, 5, IT_MUX, potValues);
-    simReadablePots[2][1] = &pots[5];
+  pots[0] = Pot(0, 0, 0, IT_MUX, potValues);
+  pots[1] = Pot(1, 0, 1, IT_MUX, potValues);
+  pots[2] = Pot(2, 0, 2, IT_MUX, potValues);
+  pots[3] = Pot(0, 1, 3, IT_MUX, potValues);
+  pots[4] = Pot(1, 1, 4, IT_MUX, potValues);
+  pots[5] = Pot(2, 1, 5, IT_MUX, potValues);
 
-    pots[6] = Pot(2, 6, IT_PIN, potValues);
-    analogPots[6] = &pots[6]; 
-    pots[7] = Pot(2, 7, IT_PIN, potValues);
-    analogPots[7] = &pots[7]; 
-    pots[8] = Pot(2, 8, IT_PIN, potValues);
-    analogPots[8] = &pots[8]; 
-    
-    
-//    if (i < NUM_MUX_POTS){
-//      int channel = int(floor(i / 3.f));
-//      pots[i] = Pot(i, IT_MUX, potValues);
-//      simReadablePots[pinNumber][channel] = pots[i];
-//    } else {
-//      //other pots are connected to analog pins 2, 3, 4      
-//      pots[i] = Pot(i, IT_PIN, potValues);
-//      analogPots[i] = &pots[i]; 
-//    }
-//  }
+  pots[6] = Pot(2, 6, IT_PIN, potValues);
+  pots[7] = Pot(2, 7, IT_PIN, potValues);
+  pots[8] = Pot(2, 8, IT_PIN, potValues);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-//  for (int i = 0; i < NUM_MUX_POTS / 2; i++){
-//    simReadablePots[i][0]->read();
-//    simReadablePots[i][1]->readNoPortSelect();
-//  }
-//
-//  for (int i = 0; i < NUM_PIN_POTS; i++){
-//    analogPots[i]->read();
-//  }
 
-  for (int i = 0; i < NUM_MUX_POTS; i++){
+  for (int i = 0; i < 3; i++){
     pots[i].read();
+    pots[i+3].readNoPortSelect();
   }
-
-  for (int i = 0; i < NUM_MUX_POTS; i++){
-    Serial.print("muxPot:" + char(i + 48));
-    Serial.print(pots[i].getValue());
-    if (i < NUM_MUX_POTS - 1) Serial.print(",");
-  }
-  Serial.println();
 
 #ifdef DEBUG_SIG
   int val1 = analogRead(A4);
@@ -106,5 +70,20 @@ void loop() {
 
 void requestHandler(){
   Wire.write(potValues, NUM_POTS * 2);
-//  Serial.println("Got request");
+}
+
+uint32_t interpolateColorSpace(int xIn, int yIn){
+  float x = xIn / 1023.;
+  float y = yIn / 1023.;
+  
+  
+  byte r = interpolateColor(RED, x, y);
+  byte g = interpolateColor(GREEN, x, y);
+  byte b = interpolateColor(BLUE, x, y);
+
+  return (uint32_t) (g << 16) | (r << 8) | b;
+}
+
+byte interpolateColor(ColorIndex c, float x, float y){
+  return byte(((colorXMax[c] * x) + (colorXMin[c] * (1 - x)) + (colorYMax[c] * y) + (colorYMin[c] * (1 - y))) / 4.);
 }

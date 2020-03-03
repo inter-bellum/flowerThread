@@ -1,136 +1,81 @@
-#include <Arduino.h>
-#include "InputType.cpp"
+#include "Pot.h"
 
 //#define DEBUG_POT
 
-class Pot {
-  //I2C uses A4 and A5, skip those
-  int analogPotPins[3] = {2, 3, 6};
-
-  int analogPin;
-  int muxPin = 999;
-  InputType inputType;
-  bool newRead = false;
-
-  int index;
-
-  int potVal, _potVal;
-  Arduino_h::byte localVal[2];
-  Arduino_h::byte* globalVal;
-  
-  public:
-
-    Pot(){};
-
-    Pot(int muxPin, int analogPin, int index, InputType inputType, Arduino_h::byte* valueArray){
-      this->muxPin = muxPin;
-      this->analogPin = analogPin;
-      this->index = index;
-      this->globalVal = valueArray;
-      this->inputType = inputType;
+Pot::Pot(int muxPin, int analogPin, int index, InputType inputType, Arduino_h::byte* valueArray){
+  this->muxPin = muxPin;
+  this->analogPin = analogPin;
+  this->index = index;
+  this->globalVal = valueArray;
+  this->inputType = inputType;
 
 #ifdef DEBUG_POT
-      Serial.print("analogPin: ");
-      Serial.print(analogPin);
-      Serial.print('\t');
+  Serial.print("analogPin: ");
+  Serial.print(analogPin);
+  Serial.print('\t');
 
-      Serial.print("muxPin: ");
-      Serial.print(muxPin);
-      Serial.print('\t');
+  Serial.print("muxPin: ");
+  Serial.print(muxPin);
+  Serial.print('\t');
 
-      Serial.print("index: ");
-      Serial.print(index);
-      Serial.print('\t');
+  Serial.print("index: ");
+  Serial.print(index);
+  Serial.print('\t');
 
-      Serial.print("inputType: ");
-      Serial.print(inputType);
-      Serial.println('\t');
+  Serial.print("inputType: ");
+  Serial.print(inputType);
+  Serial.println('\t');
 #endif
-    }
+}
 
-    Pot(int analogPin, int index, InputType inputType, Arduino_h::byte* valueArray){
-      this->analogPin = analogPin;
-      this->index = index;
-      this->globalVal = valueArray;
-      this->inputType = inputType;
-    }
+Pot::Pot(int analogPin, int index, InputType inputType, Arduino_h::byte* valueArray){
+  this->analogPin = analogPin;
+  this->index = index;
+  this->globalVal = valueArray;
+  this->inputType = inputType;
+}
 
-    Pot(int index, InputType inputType, Arduino_h::byte* valueArray){
-      this->index = index;
-      this->globalVal = valueArray;
-      this->inputType = inputType;
+void Pot::read(){
+  int readVal = -1;
+  if (inputType == IT_PIN){
+    //dummy read to init/stabilize pin (https://forum.arduino.cc/index.php?topic=69675.0)
+    analogRead(analogPin);
+    readVal = analogRead(analogPin);
+  } else if (inputType == IT_MUX && muxPin < 4){
+    PORTD = muxPin << 2;
+    //delay for a very short time to allow the mux switching to happen
+    delayMicroseconds(1);
+    //dummy read
+    analogRead(analogPin);
+    readVal = analogRead(analogPin);
+  }
 
-      if (inputType == IT_MUX){
-        this->analogPin = int(floor(index / 3.f));
-        this->muxPin = index % 3;
-      } else if (inputType == IT_PIN){
-        this->analogPin = analogPotPins[index];
-      }
-      Serial.print(index);
-      Serial.print(", ");
-      Serial.print(analogPin);
-      Serial.print(", ");
-      Serial.print(muxPin);
-      Serial.print(", ");
-      Serial.println(inputType);
-    }
-  
-    void read(){
-      int readVal = -1;
-      if (inputType == IT_PIN){
-        readVal = analogRead(analogPin);
-      } else if (inputType == IT_MUX && muxPin < 4){
-        PORTD = muxPin << 2;
-        readVal = analogRead(analogPin);
-      }
+  debugPrint();
 
-      _potVal = potVal;
-      potVal = readVal;
+  checkNewValue(readVal);
+}
 
-      if (potVal != _potVal){
-        loadIntoByteArr(potVal);
-        newRead = true;
-      }
+boolean Pot::readNoPortSelect(){
+  int readVal = -1;
+  //dummy read
+  analogRead(analogPin);
+  readVal = analogRead(analogPin);
 
-#ifdef DEBUG_POT
-      if (inputType == IT_MUX && analogPin == 0){
-        Serial.print("analogPin:");
-        Serial.print(analogPin);
-        Serial.print('\t');
-        Serial.print("muxPin:");
-        Serial.print(muxPin);
-        Serial.print('\t');
-        Serial.print("inputType:");
-        Serial.print(inputType == IT_MUX ? "IT_MUX" : "IT_PIN");
-        Serial.print('\t');
-        Serial.print("val:");
-        Serial.println(readVal);
-        Serial.println();
-      }
-#endif
-    }
+  debugPrint();
 
-    boolean readNoPortSelect(){
-      int readVal = -1;
-      readVal = analogRead(analogPin);
-      
-      _potVal = potVal;
-      potVal = readVal;
+  checkNewValue(readVal);
+}
 
-      if (potVal != _potVal){
-        loadIntoByteArr(potVal);
-        newRead = true;
-      }
-    }
+void Pot::checkNewValue(int newValue){
+  _potVal = potVal;
+  potVal = newValue;
 
-    int getValue(){
-      return potVal;
-    }
+  if (potVal != _potVal){
+    loadIntoByteArr(potVal);
+    newRead = true;
+  }
+}
 
-  private:
-    void loadIntoByteArr(int in){
-      localVal[0] = in >> 8;
-      localVal[1] = in & 0xFF;
-      memcpy(globalVal + (index * 2), localVal, 2);
-    }
-};
+int Pot::getValue(){
+  return potVal;
+}

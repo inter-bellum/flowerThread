@@ -11,20 +11,16 @@ void setup() {
   Wire.begin();
   Serial.begin(9600);
   for (int i = 0; i < NUM_ARDUINOS; i++){
-    clusters[i] = ModuleCluster(byte(i + 5), potsPerCluster[i]);
+    clusters[i] = ModuleCluster(byte(i), potsPerCluster[i], &Serial);
+    Serial.print("Initiated: ");
+    Serial.println(i);
   }
 }
 
 void loop() {
   for (int i = 0; i < NUM_ARDUINOS; i++){
+//    Serial.println(i);
     clusters[i].read();
-    if (loopCount > 60){
-      clusters[i].print();
-      loopCount = 0;
-    }
-//    clusters[i].print();
+    clusters[i].print(INT);
   }
-  loopCount++;
-//  Wire.requestFrom(5, 18);
-//  delay(100);
 }
