@@ -7,10 +7,12 @@
 
 class Module{
   public:
+    Module(){};
+    Module(int index, Pot* pots[3]);
     void read();
     void setPots(Pot* pots[3]);
   private:
+    int index;
     Pot* pots[3];
     Adafruit_NeoPixel strip;
-    
 };

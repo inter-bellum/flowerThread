@@ -5,7 +5,7 @@
 #include "InputType.cpp"
 #include <Adafruit_NeoPixel.h>
 
-//#define DEBUG_POT
+#define DEBUG_POT
 
 class Pot {
   //I2C uses A4 and A5, skip those
@@ -45,7 +45,6 @@ class Pot {
 
     void debugPrint(){
       #ifdef DEBUG_POT
-      if (index == 2 || index ==3){
       Serial.print("index:");
       Serial.print(index);
       Serial.print('\t');
@@ -61,8 +60,15 @@ class Pot {
       Serial.print("val:");
       Serial.println(potVal);
       Serial.println();
-      }
       #endif
+    }
+
+    void debugPlot(){
+      Serial.print("pin");
+      Serial.print(index);
+      Serial.print(":");
+      Serial.print(potVal);
+      Serial.print(",");
     }
 };
 

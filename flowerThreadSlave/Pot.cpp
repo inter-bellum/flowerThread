@@ -1,6 +1,7 @@
 #include "Pot.h"
 
-//#define DEBUG_POT
+//#define DEBUG_POT_PRINT
+//#define DEBUG_POT_PLOT
 
 Pot::Pot(int muxPin, int analogPin, int index, InputType inputType, Arduino_h::byte* valueArray){
   this->muxPin = muxPin;
@@ -44,13 +45,18 @@ void Pot::read(){
   } else if (inputType == IT_MUX && muxPin < 4){
     PORTD = muxPin << 2;
     //delay for a very short time to allow the mux switching to happen
-    delayMicroseconds(1);
+//    delayMicroseconds(2);
     //dummy read
     analogRead(analogPin);
     readVal = analogRead(analogPin);
   }
 
+  #ifdef DEBUG_POT_PRINT
   debugPrint();
+  #endif
+  #ifdef DEBUG_POT_PLOT
+  debugPlot();
+  #endif
 
   checkNewValue(readVal);
 }
@@ -61,7 +67,12 @@ boolean Pot::readNoPortSelect(){
   analogRead(analogPin);
   readVal = analogRead(analogPin);
 
+  #ifdef DEBUG_POT_PRINT
   debugPrint();
+  #endif
+  #ifdef DEBUG_POT_PLOT
+  debugPlot();
+  #endif
 
   checkNewValue(readVal);
 }
