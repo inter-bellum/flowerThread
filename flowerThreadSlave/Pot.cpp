@@ -21,15 +21,10 @@ Pot::Pot(int analogPin, int index, InputType inputType, Arduino_h::byte* valueAr
 void Pot::read(){
   int readVal = -1;
   if (inputType == IT_PIN){
-    //dummy read to init/stabilize pin (https://forum.arduino.cc/index.php?topic=69675.0)
-    analogRead(analogPin);
+    //possible do dummy read to init/stabilize pin (https://forum.arduino.cc/index.php?topic=69675.0)
     readVal = analogRead(analogPin);
   } else if (inputType == IT_MUX && muxPin < 4){
     PORTD = muxPin << 2;
-    //delay for a very short time to allow the mux switching to happen
-//    delayMicroseconds(2);
-    //dummy read
-    analogRead(analogPin);
     readVal = analogRead(analogPin);
   }
 
@@ -45,8 +40,6 @@ void Pot::read(){
 
 boolean Pot::readNoPortSelect(){
   int readVal = -1;
-  //dummy read
-  analogRead(analogPin);
   readVal = analogRead(analogPin);
 
   #ifdef DEBUG_POT_PRINT
@@ -65,12 +58,10 @@ void Pot::checkNewValue(int newValue){
 
   if (potVal != _potVal){
     loadIntoByteArr(potVal);
-    newRead = true;
   }
 }
 
 int Pot::getValue(){
-  newRead = false;
   return potVal;
 }
 

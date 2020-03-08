@@ -9,7 +9,6 @@ class Pot {
   int analogPin;
   int muxPin = 999;
   InputType inputType;
-  bool newRead = false;
 
   int index;
 

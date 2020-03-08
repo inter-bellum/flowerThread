@@ -44,12 +44,6 @@ void Module::read(int i){
 
 
 void Module::updateColor(){
-//  bool shouldUpdateColor = false;
-//  for (int i = 0; i < 3; i++){
-//    if (pots[i]->available()) shouldUpdateColor = true;
-//  }
-//
-//  if (!shouldUpdateColor) return;
   
   int x = pots[0]->getValue();
   float y = (pots[1]->getValue()) / 102.3;
@@ -66,13 +60,6 @@ void Module::interpolateColorSpace(int xIn, float y, int zIn){
   uint8_t r = interpolateColor(RED, x, z);
   uint8_t g = interpolateColor(GREEN, x, z);
   uint8_t b = interpolateColor(BLUE, x, z);
-
-  Serial.print(r);
-  Serial.print('\t');
-  Serial.print(g);
-  Serial.print('\t');
-  Serial.println(b);
-
   
   for (int i = 0; i < ledCount / 2; i++){
     float diff = y - i;

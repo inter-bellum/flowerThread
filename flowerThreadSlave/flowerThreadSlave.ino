@@ -1,8 +1,20 @@
 //This sketch is used to communicate the data from multiple potmeters to a teensy using I2C
 #include <Wire.h>
 #include "Module.h"
-
 #include <Adafruit_NeoPixel.h>
+
+//set adc prescaler to 16
+#ifndef cbi
+#define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
+#endif
+#ifndef sbi
+#define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
+#endif
+
+sbi(ADCSRA,ADPS2) ;
+cbi(ADCSRA,ADPS1) ;
+cbi(ADCSRA,ADPS0) ;
+//end set adc prescaler to 16
 
 Adafruit_NeoPixel strip;
 Adafruit_NeoPixel stri2p;
