@@ -2,16 +2,11 @@
 #define Pot_h
 
 #include <Arduino.h>
-#include "InputType.cpp"
 
 class Pot {
-  //I2C uses A4 and A5, skip those
-  int analogPin;
-  int muxPin = 999;
-  InputType inputType;
   bool newRead = false;
 
-  int index;
+  int analogPin;
 
   int potVal, _potVal;
   Arduino_h::byte localVal[2];
@@ -21,9 +16,7 @@ class Pot {
 
     Pot(){};
 
-    Pot(int muxPin, int analogPin, int index, InputType inputType, Arduino_h::byte* valueArray);
-
-    Pot(int analogPin, int index, InputType inputType, Arduino_h::byte* valueArray);
+    Pot(int analogPin, Arduino_h::byte* valueArray);
 
     void read();
 
@@ -43,17 +36,8 @@ class Pot {
     }
 
     void debugPrint(){
-      Serial.print("index:");
-      Serial.print(index);
-      Serial.print('\t');
-      Serial.print("inputType:");
-      Serial.print(inputType == IT_MUX ? "IT_MUX" : "IT_PIN");
-      Serial.print('\t');
       Serial.print("analogPin:");
       Serial.print(analogPin);
-      Serial.print('\t');
-      Serial.print("muxPin:");
-      Serial.print(muxPin);
       Serial.print('\t');
       Serial.print("val:");
       Serial.println(potVal);
@@ -62,7 +46,7 @@ class Pot {
 
     void debugPlot(){
       Serial.print("pin");
-      Serial.print(index);
+      Serial.print(analogPin);
       Serial.print(":");
       Serial.print(potVal);
       Serial.print(",");
