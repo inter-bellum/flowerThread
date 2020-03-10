@@ -15,16 +15,11 @@
 
 Adafruit_NeoPixel strip;
 Adafruit_NeoPixel strip2;
-Adafruit_NeoPixel strip3;
 
-int analogPotPins[3] = {2, 3, 6};
+int analogPotPins[6] = {0, 1, 2, 3, 6, 7};
 
-#define NUM_PIN_POTS  3
-#define NUM_MUX_POTS  6
-#define NUM_POTS      9
-#define NUM_MODULES   3
-#define MUX_PIN_1     0
-#define MUX_PIN_2     1
+#define NUM_POTS      6
+#define NUM_MODULES   2
 
 #define NUM_LEDS      10
 
@@ -39,17 +34,12 @@ void setup() {
   cbi(ADCSRA,ADPS1) ;
   cbi(ADCSRA,ADPS0) ;
 
-  pinMode(2, OUTPUT);
-  pinMode(3, OUTPUT);
-
   strip = Adafruit_NeoPixel(NUM_LEDS, 5, NEO_GRB + NEO_KHZ800);
   strip2 = Adafruit_NeoPixel(NUM_LEDS, 6, NEO_GRB + NEO_KHZ800);
-  strip3 = Adafruit_NeoPixel(NUM_LEDS, 9, NEO_GRB + NEO_KHZ800);
-  strip.setBrightness(50);
 
 #ifndef DEBUG_SIG
   //change for each arduino
-  Wire.begin(0x00);
+  Wire.begin(0x01);
   Wire.onRequest(requestHandler);
 #endif
 
@@ -57,32 +47,20 @@ void setup() {
   Serial.begin(9600);
 #endif
 
-  pots[0] = Pot(0, 0, 0, IT_MUX, potValues);
-  pots[1] = Pot(1, 0, 1, IT_MUX, potValues);
-  pots[2] = Pot(2, 0, 2, IT_MUX, potValues);
+  for (int i = 0; i < NUM_POTS; i++){
+    pots[i] = Pot(analogPotPins[i], i, IT_PIN, potValues);
+  }
 
   Pot* mod1[3] = {&pots[0], &pots[1], &pots[2]};
 
-  pots[3] = Pot(0, 1, 3, IT_MUX, potValues);
-  pots[4] = Pot(1, 1, 4, IT_MUX, potValues);
-  pots[5] = Pot(2, 1, 5, IT_MUX, potValues);
-
   Pot* mod2[3] = {&pots[3], &pots[4], &pots[5]};
-
-  pots[6] = Pot(2, 6, IT_PIN, potValues);
-  pots[7] = Pot(2, 7, IT_PIN, potValues);
-  pots[8] = Pot(2, 8, IT_PIN, potValues);
-
-  Pot* mod3[3] = {&pots[6], &pots[7], &pots[8]};
 
   modules[0] = Module(0, mod1, &strip);
   modules[1] = Module(1, mod2, &strip2);
-  modules[2] = Module(2, mod3, &strip3);
 }
 
 void loop() {
   modules[0].read(modules[1]);
-  modules[2].read();
   for (int i = 0; i < NUM_MODULES; i++){
     modules[i].updateColor();
   }

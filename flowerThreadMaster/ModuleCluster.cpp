@@ -7,7 +7,7 @@ ModuleCluster::~ModuleCluster(){
   free(intValues);
 }
 
-ModuleCluster::ModuleCluster(Arduino_h::byte address, int numModules, Arduino_h::HardwareSerial* ser){
+ModuleCluster::ModuleCluster(Arduino_h::byte address, int numModules, Arduino_h::HardwareSerial* ser, uint16_t* globalVal, int offset){
   this->address = address;
   this->numModules = numModules;
   this->numBytes = numModules * 6;
@@ -18,26 +18,22 @@ ModuleCluster::ModuleCluster(Arduino_h::byte address, int numModules, Arduino_h:
   this->valueArrIndex = 0;
   this->startTime = millis();
   this->ser = ser;
+  this->globalVal = globalVal;
+  this->valueArrayOffset = offset;
 }
 
 void ModuleCluster::read(){
-//  ser->println("start read");
   Wire.requestFrom(address, numBytes);
-//  ser->println("got data, parsing:");
 
   valueArrIndex = 0;
   while (Wire.available()){
     Arduino_h::byte in = Wire.read();
-//    ser->print("byte: ");
-//    ser->print(in);
-//    ser->print("\t");
-//    if (valueArrIndex % 2 == 0) ser->println();
     byteValues[valueArrIndex] = in;
     valueArrIndex++;
   }
-//  Serial.println();
 
   parseBytes();
+  memcpy(globalVal + valueArrayOffset, intValues, numBytes);
 }
 
 
