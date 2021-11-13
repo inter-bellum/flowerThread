@@ -38,9 +38,9 @@ void Module::read(int i){
 
 
 void Module::updateColor(){
-
+  
   int x = pots[0]->getValue();
-  float y = (pots[1]->getValue()) / 204.8;
+  float y = (pots[1]->getValue()) / 102.3;
   int z = pots[2]->getValue();
 
   interpolateColorSpace(x, y, z);

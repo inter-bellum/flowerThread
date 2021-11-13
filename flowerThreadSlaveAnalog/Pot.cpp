@@ -3,14 +3,23 @@
 //#define DEBUG_POT_PRINT
 // #define DEBUG_POT_PLOT
 
-Pot::Pot(int analogPin, Arduino_h::byte* valueArray){
+Pot::Pot(int muxPin, int analogPin, int index, InputType inputType, Arduino_h::byte* valueArray){
+  this->muxPin = muxPin;
   this->analogPin = analogPin;
+  this->index = index;
   this->globalVal = valueArray;
+  this->inputType = inputType;
+}
+
+Pot::Pot(int analogPin, int index, InputType inputType, Arduino_h::byte* valueArray){
+  this->analogPin = analogPin;
+  this->index = index;
+  this->globalVal = valueArray;
+  this->inputType = inputType;
 }
 
 void Pot::read(){
   int readVal = -1;
-
   if (inputType == IT_PIN){
     //possible do dummy read to init/stabilize pin (https://forum.arduino.cc/index.php?topic=69675.0)
     readVal = analogRead(analogPin);

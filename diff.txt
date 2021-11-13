@@ -1,0 +1,272 @@
+diff --git a/flowerThreadSlave/InputType.cpp b/flowerThreadSlave/InputType.cpp
+new file mode 100644
+index 0000000..c595653
+--- /dev/null
++++ b/flowerThreadSlave/InputType.cpp
+@@ -0,0 +1,10 @@
++#ifndef InputType_h
++#define InputType_h
++
++
++enum InputType {
++  IT_PIN = 0,
++  IT_MUX = 1
++};
++
++#endif
+diff --git a/flowerThreadSlave/Module.cpp b/flowerThreadSlave/Module.cpp
+index 4341338..29c0282 100644
+--- a/flowerThreadSlave/Module.cpp
++++ b/flowerThreadSlave/Module.cpp
+@@ -44,12 +44,6 @@ void Module::read(int i){
+ 
+ 
+ void Module::updateColor(){
+-//  bool shouldUpdateColor = false;
+-//  for (int i = 0; i < 3; i++){
+-//    if (pots[i]->available()) shouldUpdateColor = true;
+-//  }
+-//
+-//  if (!shouldUpdateColor) return;
+   
+   int x = pots[0]->getValue();
+   float y = (pots[1]->getValue()) / 102.3;
+@@ -66,13 +60,6 @@ void Module::interpolateColorSpace(int xIn, float y, int zIn){
+   uint8_t r = interpolateColor(RED, x, z);
+   uint8_t g = interpolateColor(GREEN, x, z);
+   uint8_t b = interpolateColor(BLUE, x, z);
+-
+-  Serial.print(r);
+-  Serial.print('\t');
+-  Serial.print(g);
+-  Serial.print('\t');
+-  Serial.println(b);
+-
+   
+   for (int i = 0; i < ledCount / 2; i++){
+     float diff = y - i;
+diff --git a/flowerThreadSlave/Pot.cpp b/flowerThreadSlave/Pot.cpp
+index daa62cd..1247e8b 100644
+--- a/flowerThreadSlave/Pot.cpp
++++ b/flowerThreadSlave/Pot.cpp
+@@ -3,16 +3,30 @@
+ //#define DEBUG_POT_PRINT
+ //#define DEBUG_POT_PLOT
+ 
+-Pot::Pot(int analogPin, Arduino_h::byte* valueArray){
++Pot::Pot(int muxPin, int analogPin, int index, InputType inputType, Arduino_h::byte* valueArray){
++  this->muxPin = muxPin;
+   this->analogPin = analogPin;
++  this->index = index;
+   this->globalVal = valueArray;
++  this->inputType = inputType;
++}
++
++Pot::Pot(int analogPin, int index, InputType inputType, Arduino_h::byte* valueArray){
++  this->analogPin = analogPin;
++  this->index = index;
++  this->globalVal = valueArray;
++  this->inputType = inputType;
+ }
+ 
+ void Pot::read(){
+   int readVal = -1;
+-  //dummy read to init/stabilize pin (https://forum.arduino.cc/index.php?topic=69675.0)
+-  // analogRead(analogPin);
+-  readVal = analogRead(analogPin);
++  if (inputType == IT_PIN){
++    //possible do dummy read to init/stabilize pin (https://forum.arduino.cc/index.php?topic=69675.0)
++    readVal = analogRead(analogPin);
++  } else if (inputType == IT_MUX && muxPin < 4){
++    PORTD = muxPin << 2;
++    readVal = analogRead(analogPin);
++  }
+ 
+   #ifdef DEBUG_POT_PRINT
+   debugPrint();
+@@ -26,8 +40,6 @@ void Pot::read(){
+ 
+ boolean Pot::readNoPortSelect(){
+   int readVal = -1;
+-  //dummy read
+-  // analogRead(analogPin);
+   readVal = analogRead(analogPin);
+ 
+   #ifdef DEBUG_POT_PRINT
+@@ -46,12 +58,10 @@ void Pot::checkNewValue(int newValue){
+ 
+   if (potVal != _potVal){
+     loadIntoByteArr(potVal);
+-    newRead = true;
+   }
+ }
+ 
+ int Pot::getValue(){
+-  newRead = false;
+   return potVal;
+ }
+ 
+diff --git a/flowerThreadSlave/Pot.h b/flowerThreadSlave/Pot.h
+index cf86e53..e8cb4e0 100644
+--- a/flowerThreadSlave/Pot.h
++++ b/flowerThreadSlave/Pot.h
+@@ -2,11 +2,15 @@
+ #define Pot_h
+ 
+ #include <Arduino.h>
++#include "InputType.cpp"
+ 
+ class Pot {
+-  bool newRead = false;
+-
++  //I2C uses A4 and A5, skip those
+   int analogPin;
++  int muxPin = 999;
++  InputType inputType;
++
++  int index;
+ 
+   int potVal, _potVal;
+   Arduino_h::byte localVal[2];
+@@ -16,7 +20,9 @@ class Pot {
+ 
+     Pot(){};
+ 
+-    Pot(int analogPin, Arduino_h::byte* valueArray);
++    Pot(int muxPin, int analogPin, int index, InputType inputType, Arduino_h::byte* valueArray);
++
++    Pot(int analogPin, int index, InputType inputType, Arduino_h::byte* valueArray);
+ 
+     void read();
+ 
+@@ -36,9 +42,18 @@ class Pot {
+     }
+ 
+     void debugPrint(){
++      Serial.print("index:");
++      Serial.print(index);
++      Serial.print('\t');
++      Serial.print("inputType:");
++      Serial.print(inputType == IT_MUX ? "IT_MUX" : "IT_PIN");
++      Serial.print('\t');
+       Serial.print("analogPin:");
+       Serial.print(analogPin);
+       Serial.print('\t');
++      Serial.print("muxPin:");
++      Serial.print(muxPin);
++      Serial.print('\t');
+       Serial.print("val:");
+       Serial.println(potVal);
+       Serial.println();
+@@ -46,7 +61,7 @@ class Pot {
+ 
+     void debugPlot(){
+       Serial.print("pin");
+-      Serial.print(analogPin);
++      Serial.print(index);
+       Serial.print(":");
+       Serial.print(potVal);
+       Serial.print(",");
+diff --git a/flowerThreadSlave/flowerThreadSlave.ino b/flowerThreadSlave/flowerThreadSlave.ino
+index 919e1ff..ce553ee 100644
+--- a/flowerThreadSlave/flowerThreadSlave.ino
++++ b/flowerThreadSlave/flowerThreadSlave.ino
+@@ -1,14 +1,32 @@
+ //This sketch is used to communicate the data from multiple potmeters to a teensy using I2C
+ #include <Wire.h>
+ #include "Module.h"
+-
+ #include <Adafruit_NeoPixel.h>
+ 
++//set adc prescaler to 16
++#ifndef cbi
++#define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
++#endif
++#ifndef sbi
++#define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
++#endif
++
++sbi(ADCSRA,ADPS2) ;
++cbi(ADCSRA,ADPS1) ;
++cbi(ADCSRA,ADPS0) ;
++//end set adc prescaler to 16
++
+ Adafruit_NeoPixel strip;
+ Adafruit_NeoPixel stri2p;
+ 
++int analogPotPins[3] = {2, 3, 6};
++
++#define NUM_PIN_POTS  3
++#define NUM_MUX_POTS  6
+ #define NUM_POTS      9
+ #define NUM_MODULES   3
++#define MUX_PIN_1     0
++#define MUX_PIN_2     1
+ 
+ #define NUM_LEDS      10
+ 
+@@ -17,12 +35,12 @@ Module modules[NUM_MODULES];
+ 
+ byte potValues[NUM_POTS * 2];
+ 
+-void setup() {
++void setup() {  
+   pinMode(2, OUTPUT);
+   pinMode(3, OUTPUT);
+ 
+   strip = Adafruit_NeoPixel(NUM_LEDS, 5, NEO_GRB + NEO_KHZ800);
+-
++  
+ #ifndef DEBUG_SIG
+   //change for each arduino
+   Wire.begin(0x00);
+@@ -31,21 +49,21 @@ void setup() {
+ 
+   Serial.begin(9600);
+ 
+-  pots[0] = Pot(0, 0, potValues);
+-  pots[1] = Pot(1, 1, potValues);
+-  pots[2] = Pot(2, 2, potValues);
++  pots[0] = Pot(0, 0, 0, IT_MUX, potValues);
++  pots[1] = Pot(1, 0, 1, IT_MUX, potValues);
++  pots[2] = Pot(2, 0, 2, IT_MUX, potValues);
+ 
+   Pot* mod1[3] = {&pots[0], &pots[1], &pots[2]};
+-
+-  pots[3] = Pot(3, 3, potValues);
+-  pots[4] = Pot(6, 4, potValues);
+-  pots[5] = Pot(7, 5, potValues);
++  
++  pots[3] = Pot(0, 1, 3, IT_MUX, potValues);
++  pots[4] = Pot(1, 1, 4, IT_MUX, potValues);
++  pots[5] = Pot(2, 1, 5, IT_MUX, potValues);
+ 
+   Pot* mod2[3] = {&pots[3], &pots[4], &pots[5]};
+ 
+-  pots[6] = Pot(8, 6, potValues);
+-  pots[7] = Pot(9, 7, potValues);
+-  pots[8] = Pot(10, 8, potValues);
++  pots[6] = Pot(2, 6, IT_PIN, potValues);
++  pots[7] = Pot(2, 7, IT_PIN, potValues);
++  pots[8] = Pot(2, 8, IT_PIN, potValues);
+ 
+   Pot* mod3[3] = {&pots[6], &pots[7], &pots[8]};
+ 
+diff --git a/flowerThreadSlave/notes.ino b/flowerThreadSlave/notes.ino
+deleted file mode 100644
+index 6fcfdb2..0000000
+--- a/flowerThreadSlave/notes.ino
++++ /dev/null
+@@ -1,12 +0,0 @@
+-/*
+- * LEDs seem to react slowly to pots, maybe double analogReads for each pot is too many, considering we're reading 9
+- * each read takes ~ 111us, so at 18 reads, that's well over a millisecond each loop.
+- * 
+- * AnalogRead can be sped up by changing the ADC prescaler to 16 (instead of 128) to increase its speed to 1MHz
+- * This hardly effects resolution.
+- * 
+- * It's also possible to read the registers directly, rather than use the analogRead, which has a bunch of checks and calculations built in
+- * try these to speed up reads? 
+- * 
+- * Serial prints also negatively effect performance, try with all prints disabled.
+- */
