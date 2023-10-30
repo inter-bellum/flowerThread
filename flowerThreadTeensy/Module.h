@@ -4,7 +4,7 @@
 #include "Pot.h"
 #include <Adafruit_NeoPixel.h>
 
-#define LPF_OLD_WEIGHT  0.95f
+#define LPF_OLD_WEIGHT  0.99f
 #define LPF_NEW_WEIGHT  1.f - LPF_OLD_WEIGHT
 enum ColorIndex{
   RED = 0U,
@@ -25,7 +25,7 @@ class Module{
     void read();
     uint16_t get(uint8_t index);
     uint8_t getPin(uint8_t i);
-    void updateColor(uint8_t* color);
+    void updateColor(uint8_t* color = nullptr);
     void setPotLight(uint8_t pot);
     void clearLEDS();
     void sendMidi();

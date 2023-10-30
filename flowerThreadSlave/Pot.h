@@ -4,11 +4,6 @@
 #include <Arduino.h>
 
 class Pot {
-  //I2C uses A4 and A5, skip those
-  int analogPin;
-  int muxPin = 999;
-  InputType inputType;
-
   int analogPin;
 
   int potVal, _potVal;

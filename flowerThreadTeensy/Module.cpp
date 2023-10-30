@@ -27,7 +27,7 @@ Module::Module(Adafruit_NeoPixel* strip, uint8_t moduleIndex, uint8_t pinNumber,
 void Module::read(){
   for (int i = 0; i < 3; i++){
     potValues[i] = pots[i].read();
-    potValues_filtered[i] = (potValues_filtered[i] * LPF_OLD_WEIGHT) + (potValues[i] * LPF_NEW_WEIGHT);
+    
     uint8_t new_val = (uint8_t) (potValues_filtered[i] / 32.);
     if (new_val != potValues_uint8[i]){
       potValues_uint8[i] = new_val;
@@ -39,14 +39,14 @@ void Module::read(){
 void Module::sendMidi(){
   for (int i = 0; i < 3; i++){
     if (potValues_changed[i]){
-      usbMIDI.sendControlChange(102 + i, this->potValues[i] / 32.0, this->index + MODULE_MIDI_OFFSET + 1);
+      usbMIDI.sendControlChange(102 + i, potValues_uint8[i], this->index + MODULE_MIDI_OFFSET + 1);
       potValues_changed[i] = false;
     }
   }
 }
 
 void Module::sendSinglePotMidi(uint8_t pot){
-  usbMIDI.sendControlChange(102 + pot, this->potValues[pot] / 32.0, this->index + MODULE_MIDI_OFFSET + 1);
+  usbMIDI.sendControlChange(102 + pot, potValues_uint8[i], this->index + MODULE_MIDI_OFFSET + 1);
 }
 
 void Module::setPotLight(uint8_t pot){
@@ -76,7 +76,6 @@ uint8_t Module::getPin(uint8_t i){
 
 
 void Module::updateColor(uint8_t* colors){
-
   interpolateColorSpace(potValues[0], potValues[1], potValues[2], colors);
 }
 
@@ -92,7 +91,7 @@ void Module::interpolateColorSpace(float xIn, float yIn, float zIn, uint8_t* col
   uint8_t b = this->interpolateColor(BLUE, x, z);
 
 #ifdef DEBUG_COLOR
-  if (colors != NULL){
+  if (colors != nullptr){
     colors[0] = r;
     colors[1] = g;
     colors[2] = b;
