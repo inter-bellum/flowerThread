@@ -117,6 +117,8 @@ void loop()
       stepMappingMode = false;
     }
 
+
+    modules[currentModule].read();
     modules[currentModule].sendSinglePotMidi(currentPot % 3);
     break;
   }
