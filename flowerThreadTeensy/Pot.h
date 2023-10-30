@@ -5,16 +5,16 @@
 #define HISTORY_SIZE  100
 
 class Pot {
-  //I2C uses A4 and A5, skip those
-  uint8_t analogPin;
+    //I2C uses A4 and A5, skip those
+    uint8_t analogPin;
 
-  uint8_t index;
+    uint8_t index;
 
-  uint16_t filtered_value;
-  float history[HISTORY_SIZE];
-  uint8_t history_index;
+    uint16_t filtered_value;
+    float history[HISTORY_SIZE];
+    uint8_t history_index;
 
-  public:
+public:
 
     Pot(){};
     Pot(uint8_t analogPin, uint8_t index);
