@@ -1,26 +1,10 @@
 #include "intFunctions.h"
 #include "Module.h"
 #include <Adafruit_NeoPixel.h>
-
-#define MIDI_CHANNEL 0
-#define CC_START 32
-
-#define NUM_MODULES 3
-#define NUM_POTS_PER_MODULE 3
-#define NUM_POTS NUM_MODULES *NUM_POTS_PER_MODULE
-#define NUM_LEDS 5
-
-#define MAPPING_MODE_PIN 6
-
-// #define MODE_SERIAL
-#define DEBUG_ACTIVE_MODULE 0
-#define DEBUG_POTS 0
-#define DEBUG_COLOR 0
-#define MODE_MIDI
+#include "globals.h"
 
 Adafruit_NeoPixel strip[NUM_MODULES];
 
-Pot pots[NUM_POTS];
 Module modules[NUM_MODULES];
 
 #ifdef DEBUG_COLOR
@@ -55,7 +39,7 @@ setup()
         uint8_t moduleNumber = i;
         uint8_t pinNumber = i * NUM_POTS_PER_MODULE;
 
-        modules[i] = Module(strip + i, moduleNumber, pinNumber, NUM_LEDS);
+        modules[i].initialize(strip + i, moduleNumber, pinNumber, NUM_LEDS, 0.9);
 
 #ifdef MODE_SERIAL
       Serial.print("Initialized module: ");

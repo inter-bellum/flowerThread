@@ -1,5 +1,7 @@
-#include "Module.h"
 #include <MIDI.h>
+
+#include "Module.h"
+#include "globals.h"
 
 #define ANALOG_PIN(x)       (x+14)
 #define LED_PIN(x)          (x+2)
@@ -10,7 +12,8 @@ uint8_t colorXMax[3] = {255, 117, 121};
 uint8_t colorZMin[3] = {59, 68, 127};
 uint8_t colorZMax[3] = {43, 94, 74};
 
-Module::Module(Adafruit_NeoPixel* strip, uint8_t moduleIndex, uint8_t pinNumber, uint8_t numLeds)
+void
+Module::initialize(Adafruit_NeoPixel* strip, uint8_t moduleIndex, uint8_t pinNumber, uint8_t numLeds, float filter_param)
 {
     this->index = moduleIndex;
     this->ledPin = LED_PIN(moduleIndex);
@@ -20,7 +23,15 @@ Module::Module(Adafruit_NeoPixel* strip, uint8_t moduleIndex, uint8_t pinNumber,
     this->strip->show();
 
     for (int i = 0; i < 3; i++){
-        pots[i] = Pot(ANALOG_PIN(pinNumber + i), i);
+        pots[i] = new Pot<EMA>(filter_param);
+        pots[i]->initialize(ANALOG_PIN(pinNumber + i), i);
+    }
+}
+
+Module::~Module()
+{
+    for (int i = 0; i < NUM_POTS_PER_MODULE; i++){
+        delete pots[i];
     }
 }
 
@@ -28,12 +39,9 @@ Module::Module(Adafruit_NeoPixel* strip, uint8_t moduleIndex, uint8_t pinNumber,
 void 
 Module::read()
 {
-    for (int i = 0; i < 3; i++){
-        potValues[i] = pots[i].read();
-        
-        uint8_t new_val = (uint8_t) (potValues_filtered[i] / 32.);
-        if (new_val != potValues_uint8[i]){
-            potValues_uint8[i] = new_val;
+    for (int i = 0; i < NUM_POTS_PER_MODULE; i++){
+        if (pots[i]->update()){
+            potValues_uint8[i] = pots[i]->read();
             potValues_changed[i] = true;
         }
     }
@@ -42,7 +50,7 @@ Module::read()
 void 
 Module::sendMidi()
 {
-    for (int i = 0; i < 3; i++){
+    for (int i = 0; i < NUM_POTS_PER_MODULE; i++){
         if (potValues_changed[i]){
             usbMIDI.sendControlChange(102 + i, potValues_uint8[i], this->index + MODULE_MIDI_OFFSET + 1);
             potValues_changed[i] = false;
@@ -62,7 +70,6 @@ Module::setPotLight(uint8_t pot)
     bool r = pot == 0, 
         g = pot == 1, 
         b = pot == 2;
-    uint8_t index = pot * 2;
     
     for (int i = 0; i < ledCount; i++) {
         strip->setPixelColor(i, strip->Color(r * 255, g * 255, b * 255));
@@ -86,7 +93,7 @@ Module::get(uint8_t index)
 uint8_t 
 Module::getPin(uint8_t i)
 {
-    return this->pots[i].getPin();
+    return this->pots[i]->getPin();
 }
 
 
@@ -103,7 +110,6 @@ Module::interpolateColorSpace(float xIn, float yIn, float zIn, uint8_t* colors)
     float x = xIn / 4096.;
     float y = yIn / 819.2;
     float z = zIn / 4096.;
-    int floorY = floor(y);
 
     uint8_t r = this->interpolateColor(RED, x, z);
     uint8_t g = this->interpolateColor(GREEN, x, z);

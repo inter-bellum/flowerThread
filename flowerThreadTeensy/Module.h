@@ -1,7 +1,8 @@
 #ifndef __MODULE_H
 #define __MODULE_H
 
-#include "Pot.h"
+#include "Pot.hpp"
+#include "EMA.hpp"
 #include <Adafruit_NeoPixel.h>
 
 #define LPF_OLD_WEIGHT  0.99f
@@ -20,8 +21,11 @@ extern uint8_t colorZMax[3];
 
 class Module{
 public:
-    Module(){};
-    Module(Adafruit_NeoPixel* strip, uint8_t moduleIndex, uint8_t pinNumber, uint8_t numLeds);
+    Module() = default;
+    ~Module();
+
+    void
+    initialize(Adafruit_NeoPixel* strip, uint8_t moduleIndex, uint8_t pinNumber, uint8_t numLeds, float filter_param);
     
     void 
     read();
@@ -46,28 +50,27 @@ public:
     
     void 
     sendSinglePotMidi(uint8_t pot);
-
-    Adafruit_NeoPixel* strip;
-    uint16_t potValues[3];
-    float potValues_filtered[3];
-    uint8_t potValues_uint8[3];
-    bool potValues_changed[3];
-private:
-    uint8_t index;
-    
-    //Pots are x, y, z (y being vertical)
-    Pot pots[3];
-    
-    uint8_t ledCount = 0;
-    uint8_t ledPin;
-
-    uint8_t i = 0;
     
     uint8_t 
     interpolateColor(ColorIndex c, float x, float z);
 
     void 
     interpolateColorSpace(float xIn, float y, float zIn, uint8_t* color);
+
+    Adafruit_NeoPixel* strip;
+    uint16_t potValues[3];
+    uint8_t potValues_uint8[3];
+    bool potValues_changed[3];
+private:
+    uint8_t index;
+    
+    //Pots are x, y, z (y being vertical)
+    Pot<EMA>* pots[3];
+    
+    uint8_t ledCount = 0;
+    uint8_t ledPin;
+
+    uint8_t i = 0;
 };
 
 #endif

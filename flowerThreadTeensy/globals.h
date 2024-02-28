@@ -1,0 +1,17 @@
+#pragma once 
+
+#define MIDI_CHANNEL 0
+#define CC_START 32
+
+#define NUM_MODULES 3
+#define NUM_POTS_PER_MODULE 3
+#define NUM_POTS NUM_MODULES *NUM_POTS_PER_MODULE
+#define NUM_LEDS 5
+
+#define MAPPING_MODE_PIN 6
+
+// #define MODE_SERIAL
+#define DEBUG_ACTIVE_MODULE 0
+#define DEBUG_POTS 0
+#define DEBUG_COLOR 0
+#define MODE_MIDI
