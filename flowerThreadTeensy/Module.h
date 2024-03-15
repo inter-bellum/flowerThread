@@ -3,7 +3,12 @@
 
 #include "Pot.hpp"
 #include "EMA.hpp"
+
+#ifndef TEST_LOCAL
 #include <Adafruit_NeoPixel.h>
+#else
+#include "mock.hpp"
+#endif
 
 #define LPF_OLD_WEIGHT  0.99f
 #define LPF_NEW_WEIGHT  1.f - LPF_OLD_WEIGHT

@@ -1,7 +1,17 @@
 #pragma once
 
+#ifdef TEST_LOCAL
 #include <cstdint>
+#include <iostream>
 #include <cmath>
+#endif
+
+template <typename T>
+constexpr T ipow(T num, unsigned int pow)
+{
+    return (pow >= sizeof(unsigned int)*8) ? 0 :
+        pow == 0 ? 1 : num * ipow(num, pow-1);
+}
 
 template <typename In_t, uint8_t In, uint8_t Out>
 class hysteresis {
@@ -17,9 +27,9 @@ public:
 private:
     constexpr static uint8_t ratio = In - Out;
     constexpr static float f_margin = 0.8;
-    constexpr static In_t step = pow(2, ratio);
-    constexpr static In_t max_v = static_cast<In_t>(f_margin * step);
-    constexpr static In_t min_v = static_cast<In_t>(step - max_v);
+    constexpr static In_t step = ipow(2, ratio);
+    constexpr static In_t max_v = f_margin * step;
+    constexpr static In_t min_v = step - max_v;
 
     In_t value;
 };

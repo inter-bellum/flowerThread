@@ -1,4 +1,8 @@
+#ifndef TEST_LOCAL
 #include <MIDI.h>
+#else
+#include "mock.hpp"
+#endif
 
 #include "Module.h"
 #include "globals.h"
@@ -130,7 +134,7 @@ Module::interpolateColorSpace(float xIn, float yIn, float zIn, uint8_t* colors)
             uint32_t c = strip->Color(r, g, b);
             strip->setPixelColor(i, c);
         } else if (diff > 0){
-            diff = sq(diff);
+            diff = diff*diff;
             uint32_t c = strip->Color(r * diff, g * diff, b * diff);
             strip->setPixelColor(i, c);
         } else {

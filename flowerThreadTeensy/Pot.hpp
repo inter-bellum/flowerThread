@@ -1,22 +1,25 @@
 #pragma once 
 
-#include <cstdint>
 
+#ifndef TEST_LOCAL
 #include "Arduino.h"
+#else
+#include <cstdint>
+#endif
 
 #include "filter.hpp"
 #include "hysteresis.hpp"
 
 #define HISTORY_SIZE  100
 
-template <template <typename> class F_t, typename T = uint16_t, uint8_t MaxIn = 10, uint8_t MaxOut = 7>
+template <template <typename> class filter_t, typename value_t = uint16_t, uint8_t MaxIn = 10, uint8_t MaxOut = 7>
 class Pot {
     //I2C uses A4 and A5, skip those
     uint8_t analogPin;
     uint8_t index;
-    F_t<T> filter;
-    hysteresis<T, MaxIn, MaxOut> hyst;
-    T last_value;
+    filter_t<value_t> filter;
+    hysteresis<value_t, MaxIn, MaxOut> hyst;
+    value_t last_value;
 public:
 
     Pot(float filter_length_or_scaling);
@@ -28,7 +31,7 @@ public:
     bool
     update();
 
-    T 
+    value_t 
     read();
 
     uint16_t 
@@ -38,22 +41,22 @@ public:
     getPin();
 };
 
-template <template <typename> class F_t, typename T, uint8_t MaxIn, uint8_t MaxOut>
-Pot<F_t, T, MaxIn, MaxOut>::Pot(float filter_length_or_scaling)
+template <template <typename> class filter_t, typename value_t, uint8_t MaxIn, uint8_t MaxOut>
+Pot<filter_t, value_t, MaxIn, MaxOut>::Pot(float filter_length_or_scaling)
     : filter(filter_length_or_scaling)
 {}
 
-template <template <typename> class F_t, typename T, uint8_t MaxIn, uint8_t MaxOut>
+template <template <typename> class filter_t, typename value_t, uint8_t MaxIn, uint8_t MaxOut>
 void
-Pot<F_t, T, MaxIn, MaxOut>::initialize(uint8_t analogPin, uint8_t index)
+Pot<filter_t, value_t, MaxIn, MaxOut>::initialize(uint8_t analogPin, uint8_t index)
 {
     this->analogPin = analogPin;
     this->index = index;
 }
 
-template <template <typename> class F_t, typename T, uint8_t MaxIn, uint8_t MaxOut>
+template <template <typename> class filter_t, typename value_t, uint8_t MaxIn, uint8_t MaxOut>
 bool 
-Pot<F_t, T, MaxIn, MaxOut>::update()
+Pot<filter_t, value_t, MaxIn, MaxOut>::update()
 {
     uint16_t read_val = analogRead(analogPin);
 
@@ -72,23 +75,23 @@ Pot<F_t, T, MaxIn, MaxOut>::update()
     return false;
 }
 
-template <template <typename> class F_t, typename T, uint8_t MaxIn, uint8_t MaxOut>
-T 
-Pot<F_t, T, MaxIn, MaxOut>::read()
+template <template <typename> class filter_t, typename value_t, uint8_t MaxIn, uint8_t MaxOut>
+value_t 
+Pot<filter_t, value_t, MaxIn, MaxOut>::read()
 {
     return last_value;
 }
 
-template <template <typename> class F_t, typename T, uint8_t MaxIn, uint8_t MaxOut>
+template <template <typename> class filter_t, typename value_t, uint8_t MaxIn, uint8_t MaxOut>
 uint16_t 
-Pot<F_t, T, MaxIn, MaxOut>::getValue()
+Pot<filter_t, value_t, MaxIn, MaxOut>::getValue()
 {
     return filter.get();
 }
 
-template <template <typename> class F_t, typename T, uint8_t MaxIn, uint8_t MaxOut>
+template <template <typename> class filter_t, typename value_t, uint8_t MaxIn, uint8_t MaxOut>
 uint8_t
-Pot<F_t, T, MaxIn, MaxOut>::getPin()
+Pot<filter_t, value_t, MaxIn, MaxOut>::getPin()
 {
     return this->analogPin;
 }

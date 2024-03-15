@@ -1,6 +1,8 @@
 #pragma once
 
+#ifdef TEST_LOCAL
 #include <cstdint>
+#endif
 
 #include "filter.hpp"
 
@@ -41,7 +43,7 @@ template <typename T>
 T
 EMA<T>::update(T new_value)
 {
-    out = this->calc(new_value);
+    prev = out = this->calc(new_value);
     return out;
 }
 
