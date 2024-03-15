@@ -5,10 +5,10 @@ project(test_flowerthread_funcs)
 set(CMAKE_CXX_STANDARD 17)
 
 add_executable(test_flowerthreads
-    main.cpp
+    mock/main.cpp
     Module.cpp
-    mock.cpp
+    mock/mock.cpp
 )
 
-target_include_directories(test_flowerthreads PRIVATE .)
+target_include_directories(test_flowerthreads PRIVATE . mock)
 target_compile_definitions(test_flowerthreads PRIVATE TEST_LOCAL)

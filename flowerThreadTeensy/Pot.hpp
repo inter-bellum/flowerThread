@@ -1,12 +1,12 @@
 #pragma once 
 
-
 #ifndef TEST_LOCAL
 #include "Arduino.h"
 #else
 #include <cstdint>
 #endif
 
+#include "globals.h"
 #include "filter.hpp"
 #include "hysteresis.hpp"
 
@@ -39,6 +39,10 @@ public:
 
     uint8_t 
     getPin();
+
+// private:
+    void
+    debugPlot(bool endl);
 };
 
 template <template <typename> class filter_t, typename value_t, uint8_t MaxIn, uint8_t MaxOut>
@@ -63,9 +67,9 @@ Pot<filter_t, value_t, MaxIn, MaxOut>::update()
     #ifdef DEBUG_POT_PRINT
     debugPrint();
     #endif
-    #ifdef DEBUG_POT_PLOT
-    debugPlot();
-    #endif
+    // #ifdef DEBUG_POT_PLOT
+    // debugPlot(index==2);
+    // #endif
 
     if (hyst.update(filter.update(read_val))) {
         last_value = hyst.get();
@@ -94,4 +98,19 @@ uint8_t
 Pot<filter_t, value_t, MaxIn, MaxOut>::getPin()
 {
     return this->analogPin;
+}
+
+template <template <typename> class filter_t, typename value_t, uint8_t MaxIn, uint8_t MaxOut>
+void
+Pot<filter_t, value_t, MaxIn, MaxOut>::debugPlot(bool endl)
+{
+    Serial.print("pin");
+    Serial.print(analogPin);
+    Serial.print(":");
+    Serial.print(last_value);
+    if (endl) {
+        Serial.println();
+    } else {
+        Serial.print(",");
+    }
 }

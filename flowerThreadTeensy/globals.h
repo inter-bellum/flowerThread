@@ -13,5 +13,8 @@
 // #define MODE_SERIAL
 #define DEBUG_ACTIVE_MODULE 0
 #define DEBUG_POTS 0
+// #define DEBUG_POT_PLOT
 #define DEBUG_COLOR 0
 #define MODE_MIDI
+
+using filter_type = EMA;

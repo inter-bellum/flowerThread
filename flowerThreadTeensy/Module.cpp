@@ -27,7 +27,7 @@ Module::initialize(Adafruit_NeoPixel* strip, uint8_t moduleIndex, uint8_t pinNum
     this->strip->show();
 
     for (int i = 0; i < 3; i++){
-        pots[i] = new Pot<EMA>(filter_param);
+        pots[i] = new Pot<filter_type>(filter_param);
         pots[i]->initialize(ANALOG_PIN(pinNumber + i), i);
     }
 }
@@ -44,7 +44,13 @@ void
 Module::read()
 {
     for (int i = 0; i < NUM_POTS_PER_MODULE; i++){
+#ifdef DEBUG_POT_PLOT
+        pots[i]->debugPlot(index==2 && i == 2);
+#endif
         if (pots[i]->update()){
+#ifdef MODE_SERIAL
+            Serial.println("Mod: " + String(index) + ", pot " + String(i) + ": diff > 6 || diff < 6");
+#endif
             potValues_uint8[i] = pots[i]->read();
             potValues_changed[i] = true;
         }

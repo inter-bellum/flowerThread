@@ -28,7 +28,7 @@ setup()
     Serial.println("Num pots: " + String(NUM_POTS));
 #endif
 
-    analogReadRes(12);
+    analogReadRes(10);
 
     pinMode(MAPPING_MODE_PIN, INPUT);
     attachInterrupt(MAPPING_MODE_PIN, mappingPinInt, FALLING);
@@ -39,7 +39,7 @@ setup()
         uint8_t moduleNumber = i;
         uint8_t pinNumber = i * NUM_POTS_PER_MODULE;
 
-        modules[i].initialize(strip + i, moduleNumber, pinNumber, NUM_LEDS, 0.9);
+        modules[i].initialize(strip + i, moduleNumber, pinNumber, NUM_LEDS, 0.2);
 
 #ifdef MODE_SERIAL
       Serial.print("Initialized module: ");
