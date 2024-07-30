@@ -122,7 +122,7 @@ debug_colors()
                 Serial.print(modules[i].getPin(j));
                 Serial.print("\t");
 
-                Serial.print(modules[i].potValues[j]);
+                Serial.print(modules[i].values[j]);
                 Serial.print("\t");
 #endif
             }
@@ -133,9 +133,9 @@ debug_colors()
             modules[i].updateColor(colors);
             Serial.print("Module: ");
             Serial.println(i);
-            float x = modules[i].potValues[0] / 4096.;
-            float y = modules[i].potValues[1] / 819.2;
-            float z = modules[i].potValues[2] / 4096.;
+            float x = modules[i].values[0] / 127.;
+            float y = modules[i].values[1] / 127.;
+            float z = modules[i].values[2] / 127.;
 
             uint8_t redtest = uint8_t(((colorXMax[RED] * x) + (colorXMin[RED] * (1 - x)) + (colorZMax[RED] * z) + (colorZMin[RED] * (1 - z))) / 2.);
 

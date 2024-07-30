@@ -63,9 +63,8 @@ public:
     interpolateColorSpace(float xIn, float y, float zIn, uint8_t* color);
 
     Adafruit_NeoPixel* strip;
-    uint16_t potValues[3];
-    uint8_t potValues_uint8[3];
-    bool potValues_changed[3];
+    uint8_t values[3];
+    bool values_changed[3];
 private:
     uint8_t index;
     

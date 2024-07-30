@@ -1,5 +1,7 @@
 #pragma once 
 
+#include "EMA.hpp"
+
 #define MIDI_CHANNEL 0
 #define CC_START 32
 
@@ -17,4 +19,5 @@
 #define DEBUG_COLOR 0
 #define MODE_MIDI
 
-using filter_type = EMA;
+template <typename T>
+using filter_type = EMA<T>;

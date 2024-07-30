@@ -51,8 +51,8 @@ Module::read()
 #ifdef MODE_SERIAL
             Serial.println("Mod: " + String(index) + ", pot " + String(i) + ": diff > 6 || diff < 6");
 #endif
-            potValues_uint8[i] = pots[i]->read();
-            potValues_changed[i] = true;
+            values[i] = pots[i]->read();
+            values_changed[i] = true;
         }
     }
 }
@@ -61,9 +61,9 @@ void
 Module::sendMidi()
 {
     for (int i = 0; i < NUM_POTS_PER_MODULE; i++){
-        if (potValues_changed[i]){
-            usbMIDI.sendControlChange(102 + i, potValues_uint8[i], this->index + MODULE_MIDI_OFFSET + 1);
-            potValues_changed[i] = false;
+        if (values_changed[i]){
+            usbMIDI.sendControlChange(102 + i, values[i], this->index + MODULE_MIDI_OFFSET + 1);
+            values_changed[i] = false;
         }
     }
 }
@@ -71,7 +71,7 @@ Module::sendMidi()
 void 
 Module::sendSinglePotMidi(uint8_t pot)
 {
-    usbMIDI.sendControlChange(102 + pot, potValues_uint8[i], this->index + MODULE_MIDI_OFFSET + 1);
+    usbMIDI.sendControlChange(102 + pot, values[i], this->index + MODULE_MIDI_OFFSET + 1);
 }
 
 void 
@@ -95,9 +95,9 @@ Module::clearLEDS()
 }
 
 uint16_t 
-Module::get(uint8_t index)
+Module::get(uint8_t i)
 {
-    return this->potValues[i];
+    return this->values[i];
 }
 
 uint8_t 
@@ -110,16 +110,16 @@ Module::getPin(uint8_t i)
 void 
 Module::updateColor(uint8_t* colors)
 {
-    interpolateColorSpace(potValues[0], potValues[1], potValues[2], colors);
+    interpolateColorSpace(values[0], values[1], values[2], colors);
 }
 
 
 void 
 Module::interpolateColorSpace(float xIn, float yIn, float zIn, uint8_t* colors)
 {
-    float x = xIn / 4096.;
-    float y = yIn / 819.2;
-    float z = zIn / 4096.;
+    float x = xIn / 127.;
+    float y = yIn / 127.;
+    float z = zIn / 127.;
 
     uint8_t r = this->interpolateColor(RED, x, z);
     uint8_t g = this->interpolateColor(GREEN, x, z);
