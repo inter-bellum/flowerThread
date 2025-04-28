@@ -22,6 +22,7 @@ Module::initialize(Adafruit_NeoPixel* strip, uint8_t moduleIndex, uint8_t pinNum
     this->index = moduleIndex;
     this->ledPin = LED_PIN(moduleIndex);
     this->ledCount = numLeds;
+    this->led_step = 127.f / ledCount;
     this->strip = strip;
     this->strip->begin();
     this->strip->show();
@@ -118,14 +119,14 @@ void
 Module::interpolateColorSpace(float xIn, float yIn, float zIn, uint8_t* colors)
 {
     float x = xIn / 127.;
-    float y = yIn / 127.;
+    float y = yIn / led_step;
     float z = zIn / 127.;
 
     uint8_t r = this->interpolateColor(RED, x, z);
     uint8_t g = this->interpolateColor(GREEN, x, z);
     uint8_t b = this->interpolateColor(BLUE, x, z);
 
-#ifdef DEBUG_COLOR
+#if DEBUG_COLOR == 1
     if (colors != nullptr){
         colors[0] = r;
         colors[1] = g;

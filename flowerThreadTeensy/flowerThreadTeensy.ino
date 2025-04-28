@@ -60,9 +60,14 @@ loop()
     case MODE_PLAYING:
 #ifdef MODE_MIDI
         for (int i = 0; i < NUM_MODULES; i++) {
+            uint8_t colors[3] = {0};
             modules[i].read();
             modules[i].sendMidi();
-            modules[i].updateColor();
+            modules[i].updateColor(colors);
+
+#if DEBUG_COLOR == 1
+            Serial.println("R: " + String(colors[0]) + ", G: " + String(colors[1]) + ", B: " + String(colors[2]));  
+#endif
         }
 #endif
 

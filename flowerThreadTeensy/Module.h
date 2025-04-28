@@ -72,6 +72,7 @@ private:
     Pot<EMA>* pots[3];
     
     uint8_t ledCount = 0;
+    float led_step;
     uint8_t ledPin;
 
     uint8_t i = 0;
