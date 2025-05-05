@@ -1,3 +1,4 @@
+#include <stdint.h>
 #pragma once 
 
 #include "EMA.hpp"
@@ -21,3 +22,33 @@
 
 template <typename T>
 using filter_type = EMA<T>;
+constexpr static uint16_t long_press_time = 2000;
+
+
+enum class button_action_t : uint8_t 
+{
+    NONE,
+    SINGLE,
+    DOUBLE,
+    LONG
+};
+
+
+enum button_press_t
+{
+    PRESSED = 0,
+    LET_GO
+};
+
+enum class instrument_state_t : uint8_t
+{
+    PERFORM_CC,
+    PERFORM_AT,
+    MAPPING
+};
+
+enum class play_mode_t : uint8_t
+{
+    PLAYING,
+    MAPPING
+};

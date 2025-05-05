@@ -1,3 +1,4 @@
+#include "globals.h"
 #ifndef __MODULE_H
 #define __MODULE_H
 
@@ -16,6 +17,13 @@ enum ColorIndex{
     RED = 0U,
     GREEN,
     BLUE
+};
+
+enum class play_mode : uint8_t
+{
+    CC,
+    CC_NOTE_TRIG,
+    AFTERTOUCH
 };
 
 extern uint8_t colorXMin[3];
@@ -62,6 +70,21 @@ public:
     void 
     interpolateColorSpace(float xIn, float y, float zIn, uint8_t* color);
 
+    void
+    switch_play_mode(play_mode mode)
+    {
+        this->mode = mode;
+    }
+
+    play_mode
+    get_play_mode()
+    {
+        return mode;
+    }
+
+    uint8_t
+    calculate_change_velocity(uint8_t val);
+
     Adafruit_NeoPixel* strip;
     uint8_t values[3];
     bool values_changed[3];
@@ -76,6 +99,16 @@ private:
     uint8_t ledPin;
 
     uint8_t i = 0;
+    play_mode mode = play_mode::CC;
+    uint8_t play_thresh = 3;
+    bool AT_active[NUM_POTS_PER_MODULE] = {false};
+    float previous_value = 0;
+    EMA<float> AT_in_filter{0.99};
+    EMA<float> AT_dif_filter{0.99};
+
+    uint8_t previous_slot = 0;
+    uint8_t threshold = 16;
+
 };
 
 #endif

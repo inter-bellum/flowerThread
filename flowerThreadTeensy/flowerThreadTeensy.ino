@@ -7,31 +7,35 @@ Adafruit_NeoPixel strip[NUM_MODULES];
 
 Module modules[NUM_MODULES];
 
+play_mode_t mode = play_mode_t::PLAYING;
+
+
 #ifdef DEBUG_COLOR
 uint8_t colors[3];
 #endif
 
-typedef enum CurrentMode
-{
-    MODE_PLAYING,
-    MODE_MAPPING
-} CurrentMode;
+uint8_t current_pot = 0, previous_pot = 0;
 
-CurrentMode mode = MODE_PLAYING;
-uint8_t currentPot = 0, _prevPot = 0;
+void
+cond_debug_print(String msg, bool cond, bool newline = true)
+{
+    if (cond) {
+        Serial.print(msg);
+        if (newline)
+          Serial.print("\n");
+    }
+}
 
 void 
 setup()
 {
-#ifdef MODE_SERIAL
-    Serial.begin(9600);
+    Serial.begin(115200);
     Serial.println("Num pots: " + String(NUM_POTS));
-#endif
 
     analogReadRes(10);
 
     pinMode(MAPPING_MODE_PIN, INPUT);
-    attachInterrupt(MAPPING_MODE_PIN, mappingPinInt, FALLING);
+    attachInterrupt(MAPPING_MODE_PIN, mappingPinInt, CHANGE);
 
     for (int i = 0; i < NUM_MODULES; i++) {
         strip[i] = Adafruit_NeoPixel(NUM_LEDS, i + 2, NEO_GRB + NEO_KHZ800);
@@ -41,69 +45,79 @@ setup()
 
         modules[i].initialize(strip + i, moduleNumber, pinNumber, NUM_LEDS, 0.2);
 
-#ifdef MODE_SERIAL
-      Serial.print("Initialized module: ");
-      Serial.println(i);
-#endif
+        Serial.print("Initialized module: ");
+        Serial.println(i);
     }
 }
 
 void 
 loop()
 {
-    if (goToMappingMode) {
-        mode = MODE_MAPPING;
-        goToMappingMode = false;
+    if (instrument_state_change && state == instrument_state_t::MAPPING) {
+        Serial.println("GOTO MAPPING MODE");
     }
 
+    if (instrument_state_change) {
+        switch (state) {
+            case instrument_state_t::PERFORM_CC: {
+                for (int i = 0; i < NUM_MODULES; i++){
+                    modules[i].switch_play_mode(play_mode::CC);
+                }
+                mode = play_mode_t::PLAYING;
+                Serial.println("Switch to CC");
+                break;
+            }
+
+            case instrument_state_t::PERFORM_AT: {
+                modules[0].switch_play_mode(play_mode::CC_NOTE_TRIG);
+                modules[1].switch_play_mode(play_mode::AFTERTOUCH);
+                modules[2].switch_play_mode(play_mode::CC_NOTE_TRIG);
+                mode = play_mode_t::PLAYING;
+                Serial.println("Switch to AT");
+                break;
+            }
+
+            case instrument_state_t::MAPPING: {
+                mode = play_mode_t::MAPPING;
+            }
+        }
+    } 
+
     switch (mode) {
-    case MODE_PLAYING:
-#ifdef MODE_MIDI
-        for (int i = 0; i < NUM_MODULES; i++) {
-            uint8_t colors[3] = {0};
-            modules[i].read();
-            modules[i].sendMidi();
-            modules[i].updateColor(colors);
+        case play_mode_t::PLAYING: {
+            for (int i = 0; i < NUM_MODULES; i++) {
+                uint8_t colors[3] = {0};
+                modules[i].read();
+                modules[i].sendMidi();
+                modules[i].updateColor(colors);
 
-#if DEBUG_COLOR == 1
-            Serial.println("R: " + String(colors[0]) + ", G: " + String(colors[1]) + ", B: " + String(colors[2]));  
-#endif
-        }
-#endif
-
-#if defined MODE_SERIAL && !defined MODE_MIDI
-        debug_colors();
-#endif
-        break;
-    case MODE_MAPPING:
-        if (digitalRead(MAPPING_MODE_PIN) == 0 && (millis() - pressTime > 2000)) {
-            mode = MODE_PLAYING;
-            firstPress = false;
+                
+                cond_debug_print("R: " + String(colors[0]) + ", G: " + String(colors[1]) + ", B: " + String(colors[2]), DEBUG_COLOR == 1);  
+            }
+            break;
         }
 
-        uint8_t currentModule = currentPot / 3;
-        uint8_t _module = _prevPot / 3;
+        
+    case play_mode_t::MAPPING:
+        uint8_t current_module = current_pot / 3;
+        uint8_t _module = previous_pot / 3;
 
-        if (stepMappingMode) {
-            _prevPot = currentPot;
-            currentPot = (currentPot + 1) % 9;
+        if (step_mapping_mode) {
+            previous_pot = current_pot;
+            current_pot = (current_pot + 1) % 9;
 
-#ifdef MODE_SERIAL
-            Serial.println("Module: " + String(currentModule) + ", Pot: " + String(currentPot % 3));
-#endif
-
-            if (currentModule != _module) {
+            if (current_module != _module) {
               modules[_module].clearLEDS();
             }
 
-            modules[currentModule].setPotLight(currentPot % 3);
+            modules[current_module].setPotLight(current_pot % 3);
 
-            stepMappingMode = false;
+            step_mapping_mode = false;
        }
 
 
-      modules[currentModule].read();
-      modules[currentModule].sendSinglePotMidi(currentPot % 3);
+      modules[current_module].read();
+      modules[current_module].sendSinglePotMidi(current_pot % 3);
       break;
     }
     

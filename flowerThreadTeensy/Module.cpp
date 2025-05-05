@@ -58,13 +58,62 @@ Module::read()
     }
 }
 
+uint8_t
+Module::calculate_change_velocity(uint8_t val)
+{
+    auto filtered_val = AT_in_filter.update(val / 127.);
+    auto diff = filtered_val - previous_value;
+    previous_value = filtered_val;
+    auto filtered_dif = AT_dif_filter.update(diff);
+    return constrain(abs(filtered_dif * 100000. * 127.), 0, 127);
+}
+
 void 
 Module::sendMidi()
 {
     for (int i = 0; i < NUM_POTS_PER_MODULE; i++){
         if (values_changed[i]){
-            usbMIDI.sendControlChange(102 + i, values[i], this->index + MODULE_MIDI_OFFSET + 1);
-            values_changed[i] = false;
+            switch (mode) {
+                case play_mode::CC: {
+                    usbMIDI.sendControlChange(102 + i, values[i], this->index + MODULE_MIDI_OFFSET + 1);
+                    values_changed[i] = false;
+                    break;
+                }
+                
+                case play_mode::CC_NOTE_TRIG: {
+                    usbMIDI.sendControlChange(102 + i, values[i], this->index + MODULE_MIDI_OFFSET + 1);
+                    if (i == 1) {
+                        auto new_slot = (values[i] - threshold) / float(127 - threshold) * 8;
+                        if (new_slot != previous_slot) {
+                            usbMIDI.sendNoteOff(60, 0, 1 + MODULE_MIDI_OFFSET + 1);
+                            usbMIDI.sendNoteOn(60, 127, 1 + MODULE_MIDI_OFFSET + 1);
+                            previous_slot = new_slot;
+                        }
+                    }
+                    break;
+                }
+
+                case play_mode::AFTERTOUCH: {
+                    if (i == 1) {
+                        auto vel = calculate_change_velocity(values[i]);
+                        if (vel > play_thresh && !AT_active[i]){
+                            // only do this for cc 103 or the wire, send cc for the others?
+                            usbMIDI.sendNoteOn(60, 127, this->index + MODULE_MIDI_OFFSET + 1);
+                            AT_active[i] = true;
+                        } else if (AT_active[i]){
+                            usbMIDI.sendNoteOff(60, 0, this->index + MODULE_MIDI_OFFSET + 1);
+                            AT_active[i] = false;
+                        }
+                        usbMIDI.sendAfterTouch(vel, this->index + MODULE_MIDI_OFFSET + 1);
+                        values_changed[i] = false;
+                    } else {
+                        usbMIDI.sendControlChange(102 + i, values[i], this->index + MODULE_MIDI_OFFSET + 1);
+                        values_changed[i] = false;
+                        break;
+                    }
+                }
+            }
+            
         }
     }
 }
