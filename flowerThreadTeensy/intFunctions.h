@@ -23,8 +23,30 @@ void
 mappingPinInt()
 {
     switch(button.state) {
+        case button_action_t::SINGLE: {
+            if (digitalReadFast(button.pin) == LET_GO) {
+                if (button.time > lower_bound && button.time < higher_bound) {
+                    instrument_state_change = true;
+                    state_before_mapping = state;
+                    state = instrument_state_t::MAPPING;
+                    button.time = 0;
+                    button.state = button_action_t::NONE;
+                    break;
+                } else {
+                    button.state = button_action_t::NONE;
+                    button.time = 0;
+                    //fallthrough
+                }
+            } else if (!(button.time > lower_bound && button.time < higher_bound)) {
+                button.state = button_action_t::NONE;
+                button.time = 0;
+                //fallthrough
+            } else {
+                break;
+            }
+        }
+
         case button_action_t::NONE: {
-            //we got here because we pressed the button, start the timer
             if (digitalReadFast(button.pin) == PRESSED) {
                 button.time = 0;
             } else {
@@ -58,22 +80,6 @@ mappingPinInt()
                 button.time = 0;
             }
             break;
-        }
-
-        case button_action_t::SINGLE: {
-            if (digitalReadFast(button.pin) == LET_GO) {
-                if (button.time > lower_bound && button.time < higher_bound) {
-                    instrument_state_change = true;
-                    state_before_mapping = state;
-                    state = instrument_state_t::MAPPING;
-                    button.time = 0;
-                    button.state = button_action_t::NONE;
-                    break;
-                } else {
-                    button.state = button_action_t::NONE;
-                    button.time = 0;
-                }
-            }
         }
 
         default:
